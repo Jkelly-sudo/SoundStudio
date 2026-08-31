@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoundStudio | AI Music Teacher</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              blue: '#1E40AF',
+              navy: '#0F172A',
+              accentBlue: '#3B82F6',
+              red: '#DC2626',
+              accentRed: '#EF4444',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .animate-pulse-ring { animation: pulse-ring 2s infinite ease-in-out; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-red selection:text-white">
+
+  <div id="onboarding-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-xl w-full shadow-2xl relative overflow-hidden">
+      <div class="absolute -top-12 -right-12 w-40 h-40 bg-brand-accentBlue/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-12 -left-12 w-40 h-40 bg-brand-accentRed/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div id="onboard-step-1" class="space-y-6">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-blue to-brand-red flex items-center justify-center text-white shadow-lg">
+            <i data-lucide="music" class="w-7 h-7"></i>
+          </div>
+          <div>
+            <h2 class="text-2xl font-black tracking-tight text-white">Welcome to SoundStudio</h2>
+            <p class="text-xs text-slate-400">Your AI-powered personal music mentor</p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">What's your name?</label>
+            <input type="text" id="user-name" placeholder="e.g. Alex" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-brand-accentBlue transition">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Choose your Instrument</label>
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <button type="button" onclick="selectInstrument('guitar')" class="inst-btn bg-slate-800 border border-slate-700 hover:border-brand-accentBlue rounded-xl p-3 flex flex-col items-center justify-center space-y-2 transition">
+                <i data-lucide="guitar" class="w-6 h-6 text-brand-accentBlue"></i>
+                <span class="text-xs font-medium">Guitar</span>
+              </button>
+              <button type="button" onclick="selectInstrument('piano')" class="inst-btn bg-slate-800 border border-slate-700 hover:border-brand-accentBlue rounded-xl p-3 flex flex-col items-center justify-center space-y-2 transition">
+                <i data-lucide="piano" class="w-6 h-6 text-brand-accentBlue"></i>
+                <span class="text-xs font-medium">Piano</span>
+              </button>
+              <button type="button" onclick="selectInstrument('drums')" class="inst-btn bg-slate-800 border border-slate-700 hover:border-brand-accentBlue rounded-xl p-3 flex flex-col items-center justify-center space-y-2 transition">
+                <i data-lucide="drum" class="w-6 h-6 text-brand-accentBlue"></i>
+                <span class="text-xs font-medium">Drums</span>
+              </button>
+              <button type="button" onclick="selectInstrument('bass')" class="inst-btn bg-slate-800 border border-slate-700 hover:border-brand-accentBlue rounded-xl p-3 flex flex-col items-center justify-center space-y-2 transition">
+                <i data-lucide="activity" class="w-6 h-6 text-brand-accentBlue"></i>
+                <span class="text-xs font-medium">Bass</span>
+              </button>
+              <button type="button" onclick="selectInstrument('vocals')" class="inst-btn bg-slate-800 border border-slate-700 hover:border-brand-accentBlue rounded-xl p-3 flex flex-col items-center justify-center space-y-2 transition">
+                <i data-lucide="mic" class="w-6 h-6 text-brand-accentBlue"></i>
+                <span class="text-xs font-medium">Vocals</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="nextOnboardStep(2)" class="w-full bg-brand-accentBlue hover:bg-blue-600 text-white font-semibold py-3 rounded-xl shadow-lg transition flex items-center justify-center space-x-2">
+          <span>Continue</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div id="onboard-step-2" class="space-y-6 hidden">
+        <div>
+          <h2 class="text-2xl font-black text-white">What's your experience level?</h2>
+          <p class="text-xs text-slate-400">We'll craft a custom Duolingo-style roadmap for you.</p>
+        </div>
+
+        <div class="space-y-3">
+          <button type="button" onclick="selectLevel('beginner')" class="level-btn w-full bg-slate-800 border border-slate-700 hover:border-brand-accentRed p-4 rounded-xl text-left flex items-center space-x-4 transition">
+            <div class="p-3 bg-slate-700 rounded-lg"><i data-lucide="sprout" class="w-6 h-6 text-green-400"></i></div>
+            <div>
+              <div class="font-bold text-sm">Beginner</div>
+              <div class="text-xs text-slate-400">Never touched the instrument or know basic open notes.</div>
+            </div>
+          </button>
+          <button type="button" onclick="selectLevel('intermediate')" class="level-btn w-full bg-slate-800 border border-slate-700 hover:border-brand-accentRed p-4 rounded-xl text-left flex items-center space-x-4 transition">
+            <div class="p-3 bg-slate-700 rounded-lg"><i data-lucide="zap" class="w-6 h-6 text-amber-400"></i></div>
+            <div>
+              <div class="font-bold text-sm">Intermediate</div>
+              <div class="text-xs text-slate-400">Can play simple songs, basic scales, and keep a steady rhythm.</div>
+            </div>
+          </button>
+          <button type="button" onclick="selectLevel('advanced')" class="level-btn w-full bg-slate-800 border border-slate-700 hover:border-brand-accentRed p-4 rounded-xl text-left flex items-center space-x-4 transition">
+            <div class="p-3 bg-slate-700 rounded-lg"><i data-lucide="flame" class="w-6 h-6 text-brand-accentRed"></i></div>
+            <div>
+              <div class="font-bold text-sm">Advanced</div>
+              <div class="text-xs text-slate-400">Fluent in music theory, improvisation, and complex rhythms.</div>
+            </div>
+          </button>
+        </div>
+
+        <button onclick="finishOnboarding()" class="w-full bg-gradient-to-r from-brand-accentBlue to-brand-accentRed hover:opacity-90 text-white font-semibold py-3 rounded-xl shadow-lg transition flex items-center justify-center space-x-2">
+          <span>Generate My AI Roadmap</span>
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-blue to-brand-red flex items-center justify-center shadow-md">
+          <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <span class="text-xl font-black tracking-wider text-white">SOUND<span class="text-brand-accentRed">STUDIO</span></span>
+          <span class="text-[10px] block text-brand-accentBlue font-bold tracking-widest uppercase -mt-1">AI Music Mentor</span>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <button onclick="switchTab('plan')" id="tab-btn-plan" class="nav-tab px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 text-white bg-slate-800 shadow">
+          <i data-lucide="map" class="w-4 h-4"></i>
+          <span>Lesson Plan</span>
+        </button>
+        <button onclick="switchTab('chat')" id="tab-btn-chat" class="nav-tab px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 text-slate-400 hover:text-white">
+          <i data-lucide="bot" class="w-4 h-4"></i>
+          <span>AI Tutor</span>
+        </button>
+        <button onclick="switchTab('songs')" id="tab-btn-songs" class="nav-tab px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 text-slate-400 hover:text-white">
+          <i data-lucide="music-2" class="w-4 h-4"></i>
+          <span>Song Library</span>
+        </button>
+        <button onclick="switchTab('listen')" id="tab-btn-listen" class="nav-tab px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 text-slate-400 hover:text-white">
+          <i data-lucide="disc" class="w-4 h-4"></i>
+          <span>Song Identifier</span>
+        </button>
+        <button onclick="switchTab('tuner')" id="tab-btn-tuner" class="nav-tab px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 text-slate-400 hover:text-white hidden">
+          <i data-lucide="sliders" class="w-4 h-4"></i>
+          <span>Tuner</span>
+        </button>
+      </nav>
+
+      <div id="user-profile-badge" class="flex items-center space-x-3 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700">
+        <div class="w-7 h-7 rounded-full bg-brand-accentRed flex items-center justify-center text-xs font-bold text-white" id="badge-avatar">
+          U
+        </div>
+        <div class="text-left">
+          <p class="text-xs font-bold text-white leading-tight" id="badge-name">User</p>
+          <p class="text-[10px] text-brand-accentBlue font-medium capitalize" id="badge-details">Guitar • Beginner</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex md:hidden border-t border-slate-800 bg-slate-900 justify-around p-2">
+      <button onclick="switchTab('plan')" class="p-2 text-slate-400 hover:text-white flex flex-col items-center text-[10px]"><i data-lucide="map" class="w-5 h-5"></i>Plan</button>
+      <button onclick="switchTab('chat')" class="p-2 text-slate-400 hover:text-white flex flex-col items-center text-[10px]"><i data-lucide="bot" class="w-5 h-5"></i>AI Tutor</button>
+      <button onclick="switchTab('songs')" class="p-2 text-slate-400 hover:text-white flex flex-col items-center text-[10px]"><i data-lucide="music-2" class="w-5 h-5"></i>Songs</button>
+      <button onclick="switchTab('listen')" class="p-2 text-slate-400 hover:text-white flex flex-col items-center text-[10px]"><i data-lucide="disc" class="w-5 h-5"></i>Identify</button>
+      <button onclick="switchTab('tuner')" id="mobile-tuner-btn" class="p-2 text-slate-400 hover:text-white flex flex-col items-center text-[10px] hidden"><i data-lucide="sliders" class="w-5 h-5"></i>Tuner</button>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 overflow-y-auto">
+
+    <section id="tab-plan" class="tab-content space-y-8">
+      <div class="bg-gradient-to-r from-slate-900 via-brand-blue/30 to-slate-900 border border-slate-800 rounded-3xl p-6 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="space-y-2 text-center md:text-left z-10">
+          <span class="bg-brand-accentRed/20 text-brand-accentRed text-xs font-bold px-3 py-1 rounded-full border border-brand-accentRed/30 uppercase tracking-widest">Roadmap Projection</span>
+          <h1 class="text-3xl font-extrabold text-white">Path to Professional Mastery</h1>
+          <p class="text-sm text-slate-300 max-w-lg">Based on your practice commitment of 30 mins/day, here is your estimated timeline to achieve pro mastery on <span id="plan-inst-name" class="font-bold text-brand-accentBlue">Guitar</span>.</p>
+        </div>
+        <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex items-center space-x-6 z-10">
+          <div class="text-center">
+            <p class="text-xs text-slate-400 uppercase tracking-wider">Est. Pro Date</p>
+            <p class="text-2xl font-black text-brand-accentBlue" id="pro-est-date">18 Months</p>
+          </div>
+          <div class="h-8 w-px bg-slate-800"></div>
+          <div class="text-center">
+            <p class="text-xs text-slate-400 uppercase tracking-wider">Lessons Total</p>
+            <p class="text-2xl font-black text-brand-accentRed">142</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-6 sm:p-10 relative">
+        <h3 class="text-lg font-bold text-white mb-6 flex items-center space-x-2">
+          <i data-lucide="git-commit" class="w-5 h-5 text-brand-accentBlue"></i>
+          <span>Interactive Learning Path</span>
+        </h3>
+
+        <div id="duolingo-tree" class="flex flex-col items-center space-y-12 relative max-w-md mx-auto py-8">
+          </div>
+      </div>
+    </section>
+
+    <section id="tab-chat" class="tab-content hidden h-[calc(100vh-10rem)]">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl h-full flex flex-col overflow-hidden shadow-xl">
+        <div class="bg-slate-950/80 px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-full bg-brand-accentBlue/20 border border-brand-accentBlue flex items-center justify-center text-brand-accentBlue">
+              <i data-lucide="bot" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">Maestro AI Mentor</h3>
+              <p class="text-[10px] text-green-400 flex items-center">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-400 inline-block mr-1"></span> Online • Ready to teach
+              </p>
+            </div>
+          </div>
+          <span class="text-xs bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-slate-300">Tone: Conversational & Encouraging</span>
+        </div>
+
+        <div id="chat-messages" class="flex-1 p-6 overflow-y-auto space-y-4 no-scrollbar">
+          <div class="flex items-start space-x-3 max-w-2xl">
+            <div class="w-8 h-8 rounded-full bg-brand-accentBlue/20 border border-brand-accentBlue flex items-center justify-center text-brand-accentBlue flex-shrink-0">
+              <i data-lucide="bot" class="w-4 h-4"></i>
+            </div>
+            <div class="bg-slate-800 border border-slate-700/80 rounded-2xl rounded-tl-none p-4 text-sm text-slate-200 leading-relaxed shadow">
+              <p id="chat-welcome-msg">Hey there! I'm Maestro, your personal AI music teacher. Ask me anything about your current lesson plan, request guitar/piano/bass tabs for any song, or ask for technique tips!</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 bg-slate-950/80 border-t border-slate-800">
+          <form id="chat-form" onsubmit="handleSendMessage(event)" class="flex items-center space-x-2">
+            <input type="text" id="chat-input" placeholder="Ask for tabs, chord diagrams, or song advice..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-accentBlue transition">
+            <button type="submit" class="bg-brand-accentBlue hover:bg-blue-600 text-white p-3 rounded-xl transition shadow">
+              <i data-lucide="send" class="w-5 h-5"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-songs" class="tab-content hidden space-y-6">
+      <div class="flex flex-col md:flex-row items-md-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-white">Song Library & Interactive Tabs</h2>
+          <p class="text-xs text-slate-400">Select a song to access interactive sheet music, chords, and tabs for your instrument.</p>
+        </div>
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
+          <input type="text" id="song-search" placeholder="Search songs or artists..." class="bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-brand-accentBlue">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="song-grid">
+        </div>
+    </section>
+
+    <section id="tab-listen" class="tab-content hidden space-y-6">
+      <div class="max-w-2xl mx-auto text-center space-y-8 py-10">
+        <div>
+          <h2 class="text-3xl font-black text-white">Song & Pitch Identifier</h2>
+          <p class="text-xs text-slate-400 mt-2">Play or sing audio near your microphone, and our engine will identify the song and fetch tabs for you.</p>
+        </div>
+
+        <div class="relative flex items-center justify-center">
+          <div id="listen-pulse" class="absolute w-48 h-48 bg-brand-accentRed/20 rounded-full animate-pulse-ring hidden"></div>
+          <button id="listen-btn" onclick="toggleSongListening()" class="relative z-10 w-36 h-36 rounded-full bg-gradient-to-tr from-brand-blue to-brand-red p-1 shadow-2xl hover:scale-105 transition duration-300">
+            <div class="w-full h-full bg-slate-950 rounded-full flex flex-col items-center justify-center space-y-2">
+              <i data-lucide="mic" id="listen-icon" class="w-10 h-10 text-brand-accentRed"></i>
+              <span id="listen-status-text" class="text-xs font-bold uppercase tracking-wider text-slate-300">Tap to Listen</span>
+            </div>
+          </button>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 max-w-lg mx-auto">
+          <canvas id="visualizer-canvas" class="w-full h-20 rounded-lg bg-slate-950"></canvas>
+        </div>
+
+        <div id="listen-result" class="hidden bg-slate-900 border border-brand-accentBlue/40 rounded-2xl p-6 text-left max-w-lg mx-auto space-y-3">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 bg-brand-blue/30 rounded-xl flex items-center justify-center text-brand-accentBlue font-bold">
+              <i data-lucide="music" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-bold uppercase">100% Match Found</span>
+              <h4 id="detected-title" class="text-lg font-bold text-white">Hotel California</h4>
+              <p id="detected-artist" class="text-xs text-slate-400">Eagles • Key of B Minor</p>
+            </div>
+          </div>
+          <div class="pt-2 flex space-x-2">
+            <button onclick="switchTab('songs')" class="flex-1 bg-brand-accentBlue hover:bg-blue-600 text-white text-xs font-bold py-2 rounded-lg transition">Load Tabs</button>
+            <button onclick="askAIAboutSong()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2 rounded-lg transition">Ask AI Teacher</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-tuner" class="tab-content hidden space-y-6">
+      <div class="max-w-md mx-auto text-center space-y-6 py-6">
+        <div>
+          <h2 class="text-2xl font-black text-white">Instrument Chromatic Tuner</h2>
+          <p class="text-xs text-slate-400 mt-1">Pluck a string near your mic to tune your instrument accurately.</p>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 relative overflow-hidden shadow-2xl">
+          <div class="relative h-12 bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+            <div class="absolute inset-y-0 w-0.5 bg-brand-accentRed left-1/2 z-10"></div>
+            <div id="tuner-indicator" class="absolute h-full w-2 bg-brand-accentBlue rounded transition-all duration-100" style="left: 50%;"></div>
+          </div>
+
+          <div class="space-y-1">
+            <span id="tuner-note" class="text-6xl font-black tracking-tight text-white">--</span>
+            <p id="tuner-cents" class="text-xs text-slate-500 uppercase font-semibold tracking-widest">In Tune</p>
+          </div>
+
+          <button id="tuner-start-btn" onclick="toggleTuner()" class="w-full bg-brand-accentBlue hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition shadow">
+            Start Instrument Tuner
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div id="practice-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-xl w-full space-y-6 shadow-2xl relative">
+        <button onclick="closePracticeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+
+        <div>
+          <span class="text-xs font-bold text-brand-accentBlue uppercase tracking-widest" id="modal-lesson-category">Interactive Practice</span>
+          <h3 class="text-2xl font-black text-white" id="modal-lesson-title">Lesson Title</h3>
+        </div>
+
+        <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-slate-300 text-sm leading-relaxed" id="modal-lesson-desc">
+          Instructions...
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700 p-4 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-white flex items-center space-x-2">
+              <i data-lucide="ear" class="w-4 h-4 text-brand-accentRed"></i>
+              <span>AI Audio Feedback Engine</span>
+            </span>
+            <span id="listening-badge" class="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded font-bold">Idle</span>
+          </div>
+          <p id="ai-live-tip" class="text-xs text-slate-300 italic">"Click 'Start Practice' and play your instrument. I will listen to your audio and coach your timing and pitch."</p>
+        </div>
+
+        <div class="flex space-x-3">
+          <button id="practice-listen-btn" onclick="toggleInteractivePractice()" class="flex-1 bg-brand-accentRed hover:bg-red-600 text-white font-bold py-3 rounded-xl transition flex items-center justify-center space-x-2">
+            <i data-lucide="mic" class="w-4 h-4"></i>
+            <span id="practice-btn-label">Start Interactive Practice</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // --- STATE MANAGEMENT ---
+    let userProfile = {
+      name: "Musician",
+      instrument: "guitar",
+      level: "beginner"
+    };
+
+    let activeTab = 'plan';
+    let isListeningForSong = false;
+    let isTunerActive = false;
+    let isPracticing = false;
+    let audioContext, analyser, microphone, stream;
+
+    // --- CURATED LESSON DATA (DUOLINGO STYLE) ---
+    const lessonTrees = {
+      guitar: [
+        { id: 1, title: "Anatomy & Tuning", desc: "Learn string names (EADGBE) and basic posture.", status: "completed" },
+        { id: 2, title: "First Open Chords", desc: "Master Em, A minor, and C major smooth switches.", status: "active" },
+        { id: 3, title: "Strumming Patterns", desc: "Learn the foundational Down-Down-Up-Up-Down-Up beat.", status: "locked" },
+        { id: 4, title: "Barre Chord Gateway", desc: "Unlock F Major and navigate the fretboard dynamically.", status: "locked" },
+        { id: 5, title: "Pentatonic Soloing", desc: "Improvise over backing tracks in A Minor Pentatonic.", status: "locked" }
+      ],
+      piano: [
+        { id: 1, title: "Key Geography & Posture", desc: "Locate Middle C and master two-hand fingering.", status: "completed" },
+        { id: 2, title: "Major Scales & Triads", desc: "Build C, G, and F Major scales and chords.", status: "active" },
+        { id: 3, title: "Two-Hand Coordination", desc: "Play bass notes with left hand while melodic on right.", status: "locked" },
+        { id: 4, title: "Arpeggios & Inversions", desc: "Add flow and complexity to basic chord arrangements.", status: "locked" }
+      ],
+      bass: [
+        { id: 1, title: "Plucking Technique", desc: "Alternating index and middle finger rest-strokes.", status: "completed" },
+        { id: 2, title: "Root Note Grooves", desc: "Locking in with the kick drum on simple progressions.", status: "active" },
+        { id: 3, title: "Slap & Pop Basics", desc: "Thumb slap and index pop dynamic techniques.", status: "locked" }
+      ],
+      drums: [
+        { id: 1, title: "Stick Grip & Basic Beat", desc: "8th notes on Hi-Hat, 1 & 3 on Kick, 2 & 4 on Snare.", status: "completed" },
+        { id: 2, title: "Drum Fills & Dynamics", desc: "Transitioning around the toms without losing beat.", status: "active" }
+      ],
+      vocals: [
+        { id: 1, title: "Breath Support & Posture", desc: "Diaphragmatic breathing and resonance control.", status: "completed" },
+        { id: 2, title: "Pitch Matching & Scales", desc: "Singing clean intervals with chromatic tuner feedback.", status: "active" }
+      ]
+    };
+
+    // --- SONGS LIBRARY DATA ---
+    const songDatabase = [
+      { title: "Wonderwall", artist: "Oasis", difficulty: "Easy", instrument: "guitar", tab: "Chords: Em7 - G - Dsus4 - A7sus4\nStrumming: D-D-D-U-D-U" },
+      { title: "Let It Be", artist: "The Beatles", difficulty: "Easy", instrument: "piano", tab: "Right Hand: C - G - Am - F\nLeft Hand: Single octave roots" },
+      { title: "Seven Nation Army", artist: "The White Stripes", difficulty: "Easy", instrument: "bass", tab: "G|-----------------|\nD|-----------------|\nA|--7--7-10--7--5--3--2--|\nE|-----------------|" },
+      { title: "Back in Black", artist: "AC/DC", difficulty: "Medium", instrument: "drums", tab: "Hi-Hat: x-x-x-x-x-x-x-x\nSnare:  ----o-------o--\nKick:   o-------o------" },
+      { title: "Hallelujah", artist: "Jeff Buckley", difficulty: "Medium", instrument: "vocals", tab: "Vocal Range: C3 - G4\nKey: C Major\nFocus: Dynamic breath control" }
+    ];
+
+    // --- INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderSongs();
+    });
+
+    // --- ONBOARDING FLOW ---
+    function selectInstrument(inst) {
+      userProfile.instrument = inst;
+      document.querySelectorAll('.inst-btn').forEach(btn => btn.classList.remove('border-brand-accentBlue', 'bg-slate-800/50'));
+      event.currentTarget.classList.add('border-brand-accentBlue', 'bg-slate-800/50');
+    }
+
+    function selectLevel(lvl) {
+      userProfile.level = lvl;
+      document.querySelectorAll('.level-btn').forEach(btn => btn.classList.remove('border-brand-accentRed'));
+      event.currentTarget.classList.add('border-brand-accentRed');
+    }
+
+    function nextOnboardStep(step) {
+      const nameInput = document.getElementById('user-name').value.trim();
+      if (nameInput) userProfile.name = nameInput;
+
+      document.getElementById('onboard-step-1').classList.add('hidden');
+      document.getElementById('onboard-step-2').classList.remove('hidden');
+    }
+
+    function finishOnboarding() {
+      document.getElementById('onboarding-modal').classList.add('hidden');
+      
+      // Update UI elements with Profile Data
+      document.getElementById('badge-name').innerText = userProfile.name;
+      document.getElementById('badge-avatar').innerText = userProfile.name.charAt(0).toUpperCase();
+      document.getElementById('badge-details').innerText = `${userProfile.instrument} • ${userProfile.level}`;
+      document.getElementById('plan-inst-name').innerText = userProfile.instrument.toUpperCase();
+
+      // Show Tuner tab if Guitar or Bass
+      if (userProfile.instrument === 'guitar' || userProfile.instrument === 'bass') {
+        document.getElementById('tab-btn-tuner').classList.remove('hidden');
+        document.getElementById('mobile-tuner-btn').classList.remove('hidden');
+      } else {
+        document.getElementById('tab-btn-tuner').classList.add('hidden');
+        document.getElementById('mobile-tuner-btn').classList.add('hidden');
+      }
+
+      // Update AI Welcome
+      document.getElementById('chat-welcome-msg').innerText = `Hey ${userProfile.name}! I'm Maestro, your AI teacher. I've built a tailored ${userProfile.level} lesson path for ${userProfile.instrument}. How can I assist your practice today?`;
+
+      renderDuolingoTree();
+    }
+
+    // --- NAVIGATION LOGIC ---
+    function switchTab(tabId) {
+      activeTab = tabId;
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      // Update navbar styling
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.classList.remove('bg-slate-800', 'text-white', 'shadow');
+        btn.classList.add('text-slate-400');
+      });
+
+      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-slate-800', 'text-white', 'shadow');
+        activeBtn.classList.remove('text-slate-400');
+      }
+    }
+
+    // --- DUOLINGO TREE RENDERER ---
+    function renderDuolingoTree() {
+      const container = document.getElementById('duolingo-tree');
+      container.innerHTML = '';
+
+      const lessons = lessonTrees[userProfile.instrument] || lessonTrees['guitar'];
+
+      lessons.forEach((lesson, idx) => {
+        const offsetClass = idx % 2 === 0 ? 'translate-x-0' : (idx % 3 === 1 ? 'translate-x-12' : '-translate-x-12');
+        
+        let statusBg = 'bg-slate-800 border-slate-700 text-slate-500';
+        let icon = 'lock';
+
+        if (lesson.status === 'completed') {
+          statusBg = 'bg-green-500/20 border-green-500 text-green-400';
+          icon = 'check';
+        } else if (lesson.status === 'active') {
+          statusBg = 'bg-gradient-to-tr from-brand-accentBlue to-brand-accentRed border-white text-white shadow-lg animate-bounce';
+          icon = 'play';
+        }
+
+        const nodeHTML = `
+          <div class="flex flex-col items-center space-y-2 transform ${offsetClass} transition">
+            <button onclick="openPracticeModal('${lesson.title}', '${lesson.desc}')" ${lesson.status === 'locked' ? 'disabled' : ''} class="w-20 h-20 rounded-full border-4 ${statusBg} flex items-center justify-center relative hover:scale-110 transition shadow-2xl">
+              <i data-lucide="${icon}" class="w-8 h-8"></i>
+            </button>
+            <span class="text-xs font-bold text-slate-200 bg-slate-900/90 border border-slate-800 px-3 py-1 rounded-full shadow">${lesson.title}</span>
+          </div>
+        `;
+        container.innerHTML += nodeHTML;
+      });
+
+      lucide.createIcons();
+    }
+
+    // --- AI CHATBOT LOGIC ---
+    function handleSendMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      // Render User Message
+      const chatMessages = document.getElementById('chat-messages');
+      chatMessages.innerHTML += `
+        <div class="flex items-start justify-end space-x-3 max-w-2xl ml-auto">
+          <div class="bg-brand-blue text-white border border-brand-accentBlue/30 rounded-2xl rounded-tr-none p-4 text-sm shadow">
+            <p>${escapeHTML(text)}</p>
+          </div>
+        </div>
+      `;
+
+      input.value = '';
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // Generate AI Response
+      setTimeout(() => {
+        const aiReply = generateAIResponse(text);
+        chatMessages.innerHTML += `
+          <div class="flex items-start space-x-3 max-w-2xl">
+            <div class="w-8 h-8 rounded-full bg-brand-accentBlue/20 border border-brand-accentBlue flex items-center justify-center text-brand-accentBlue flex-shrink-0">
+              <i data-lucide="bot" class="w-4 h-4"></i>
+            </div>
+            <div class="bg-slate-800 border border-slate-700/80 rounded-2xl rounded-tl-none p-4 text-sm text-slate-200 leading-relaxed shadow space-y-2">
+              ${aiReply}
+            </div>
+          </div>
+        `;
+        lucide.createIcons();
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }, 700);
+    }
+
+    function generateAIResponse(prompt) {
+      const p = prompt.toLowerCase();
+      if (p.includes('tab') || p.includes('notes') || p.includes('chord')) {
+        return `
+          <p class="font-bold text-brand-accentBlue">Here are the notes/tab breakdown you requested:</p>
+          <pre class="bg-slate-950 p-3 rounded-lg text-xs font-mono text-amber-300 overflow-x-auto">
+e|---0---2---3---2---0---|
+B|---1---3---0---3---1---|
+G|---0---2---0---2---0---|
+D|---2---0---0---0---2---|
+A|---3-------2-------3---|
+E|-----------3-----------|</pre>
+          <p><strong>Tip:</strong> Keep your fingertips perpendicular to the fretboard to avoid accidental muting!</p>
+        `;
+      } else if (p.includes('lesson') || p.includes('plan')) {
+        return `Based on your current plan, focus on finger independence. Try practicing slow chromatic scale warm-ups for 5 minutes at 80 BPM before tackling your main piece!`;
+      } else {
+        return `That's a great question about playing ${userProfile.instrument}! Remember that consistency beats intensity. Even 15 minutes of deliberate practice daily will rewire your muscle memory faster than a 3-hour weekend cram session.`;
+      }
+    }
+
+    // --- SONG IDENTIFIER & WEBAUDIO VISUALIZER ---
+    async function toggleSongListening() {
+      const pulse = document.getElementById('listen-pulse');
+      const text = document.getElementById('listen-status-text');
+      const icon = document.getElementById('listen-icon');
+      const resultBox = document.getElementById('listen-result');
+
+      if (!isListeningForSong) {
+        isListeningForSong = true;
+        pulse.classList.remove('hidden');
+        text.innerText = "Listening...";
+        text.classList.add('text-brand-accentRed');
+        icon.classList.add('animate-spin');
+
+        // Start WebAudio Visualizer
+        startVisualizer();
+
+        // Simulate Match Detection after 4s
+        setTimeout(() => {
+          if (isListeningForSong) {
+            toggleSongListening();
+            resultBox.classList.remove('hidden');
+          }
+        }, 4000);
+      } else {
+        isListeningForSong = false;
+        pulse.classList.add('hidden');
+        text.innerText = "Tap to Listen";
+        text.classList.remove('text-brand-accentRed');
+        icon.classList.remove('animate-spin');
+      }
+    }
+
+    function startVisualizer() {
+      const canvas = document.getElementById('visualizer-canvas');
+      const ctx = canvas.getContext('2d');
+      let animId;
+
+      function draw() {
+        if (!isListeningForSong && !isTunerActive && !isPracticing) return;
+        requestAnimationFrame(draw);
+
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const bars = 30;
+        const barWidth = canvas.width / bars;
+
+        for (let i = 0; i < bars; i++) {
+          const height = Math.random() * canvas.height * 0.8;
+          ctx.fillStyle = i % 2 === 0 ? '#3B82F6' : '#EF4444';
+          ctx.fillRect(i * barWidth, canvas.height - height, barWidth - 2, height);
+        }
+      }
+      draw();
+    }
+
+    function askAIAboutSong() {
+      switchTab('chat');
+      const input = document.getElementById('chat-input');
+      input.value = "Can you give me advice and tab techniques for playing Hotel California?";
+    }
+
+    // --- TUNER LOGIC ---
+    function toggleTuner() {
+      const btn = document.getElementById('tuner-start-btn');
+      const noteEl = document.getElementById('tuner-note');
+      const centsEl = document.getElementById('tuner-cents');
+      const indicator = document.getElementById('tuner-indicator');
+
+      if (!isTunerActive) {
+        isTunerActive = true;
+        btn.innerText = "Stop Tuner";
+        btn.classList.replace('bg-brand-accentBlue', 'bg-slate-700');
+
+        const notes = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
+        
+        // Dynamic pitch variation simulation
+        window.tunerInterval = setInterval(() => {
+          const randomNote = notes[Math.floor(Math.random() * notes.length)];
+          const offset = (Math.random() * 40 - 20).toFixed(0);
+          
+          noteEl.innerText = randomNote;
+          centsEl.innerText = offset == 0 ? "IN TUNE" : `${offset > 0 ? '+' : ''}${offset} CENTS`;
+          centsEl.className = offset == 0 ? "text-xs font-bold text-green-400 tracking-widest uppercase" : "text-xs font-bold text-brand-accentRed tracking-widest uppercase";
+          
+          const positionPercent = 50 + parseInt(offset);
+          indicator.style.left = `${positionPercent}%`;
+        }, 800);
+      } else {
+        isTunerActive = false;
+        clearInterval(window.tunerInterval);
+        btn.innerText = "Start Instrument Tuner";
+        btn.classList.replace('bg-slate-700', 'bg-brand-accentBlue');
+        noteEl.innerText = "--";
+        centsEl.innerText = "IN TUNE";
+      }
+    }
+
+    // --- INTERACTIVE LESSON PRACTICE MODAL ---
+    function openPracticeModal(title, desc) {
+      document.getElementById('modal-lesson-title').innerText = title;
+      document.getElementById('modal-lesson-desc').innerText = desc;
+      document.getElementById('modal-lesson-category').innerText = `${userProfile.instrument.toUpperCase()} LESSON`;
+      document.getElementById('practice-modal').classList.remove('hidden');
+    }
+
+    function closePracticeModal() {
+      document.getElementById('practice-modal').classList.add('hidden');
+      if (isPracticing) toggleInteractivePractice();
+    }
+
+    function toggleInteractivePractice() {
+      const label = document.getElementById('practice-btn-label');
+      const badge = document.getElementById('listening-badge');
+      const feedback = document.getElementById('ai-live-tip');
+
+      if (!isPracticing) {
+        isPracticing = true;
+        label.innerText = "Listening to Audio...";
+        badge.innerText = "Active Listener";
+        badge.className = "text-[10px] bg-red-500/20 text-brand-accentRed px-2 py-0.5 rounded font-bold animate-pulse";
+
+        const tips = [
+          "Nice rhythm! Try lightening your press on the frets/keys.",
+          "Pitch was slightly sharp on that last chord change.",
+          "Great speed! Keep your wrist relaxed for cleaner articulation."
+        ];
+
+        window.practiceInterval = setInterval(() => {
+          const randomTip = tips[Math.floor(Math.random() * tips.length)];
+          feedback.innerText = `"${randomTip}"`;
+        }, 2500);
+
+      } else {
+        isPracticing = false;
+        clearInterval(window.practiceInterval);
+        label.innerText = "Start Interactive Practice";
+        badge.innerText = "Idle";
+        badge.className = "text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded font-bold";
+        feedback.innerText = '"Click Start Practice and play your instrument."';
+      }
+    }
+
+    // --- RENDER SONGS GRID ---
+    function renderSongs() {
+      const container = document.getElementById('song-grid');
+      container.innerHTML = '';
+
+      songDatabase.forEach(song => {
+        container.innerHTML += `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-brand-accentBlue/50 transition space-y-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <h4 class="font-bold text-white text-lg">${song.title}</h4>
+                <p class="text-xs text-slate-400">${song.artist}</p>
+              </div>
+              <span class="text-[10px] bg-brand-blue/20 text-brand-accentBlue border border-brand-blue/30 font-bold px-2 py-0.5 rounded capitalize">${song.instrument}</span>
+            </div>
+            <pre class="bg-slate-950 p-3 rounded-xl text-xs font-mono text-slate-300 overflow-x-auto border border-slate-800">${song.tab}</pre>
+            <button onclick="askAIForSongTabs('${song.title}')" class="w-full bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white py-2 rounded-xl transition flex items-center justify-center space-x-2">
+              <i data-lucide="bot" class="w-4 h-4 text-brand-accentBlue"></i>
+              <span>Ask AI Teacher For Deep Breakdown</span>
+            </button>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    function askAIForSongTabs(songTitle) {
+      switchTab('chat');
+      const input = document.getElementById('chat-input');
+      input.value = `Can you break down the complete lesson plan and tabs for learning ${songTitle}?`;
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
